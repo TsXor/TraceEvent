@@ -83,14 +83,15 @@ EventRecordCallback(PEVENT_RECORD EventRecord)
     if (EventInfo->ProviderNameOffset > 0)
         wprintf(L"[%ls] ", (PWCHAR)((PBYTE)(EventInfo) +EventInfo->ProviderNameOffset));
     if (EventInfo->TaskNameOffset > 0)
-        wprintf(L"%ls ", (PWCHAR)((PBYTE)(EventInfo) +EventInfo->TaskNameOffset));
+        wprintf(L"%ls (%ld) ", (PWCHAR)((PBYTE)(EventInfo) +EventInfo->TaskNameOffset),
+                         EventRecord->EventHeader.EventDescriptor.Id);
 
     // Print Event Property: Property Name and Property Data
     if (EventInfo->TopLevelPropertyCount > 0)
     {
         for (ULONG i = 0; i < EventInfo->TopLevelPropertyCount; i++)
         {
-            wprintf(L"%ls:",
+            wprintf(L"%ls",
                 (PWCHAR)((PBYTE)(EventInfo) +EventInfo->EventPropertyInfoArray[i].NameOffset));
 
             //GetMapInfo(
@@ -129,7 +130,17 @@ EventRecordCallback(PEVENT_RECORD EventRecord)
 
             if (result == ERROR_SUCCESS)
             {
-                wprintf(L"%ls ", FormattedData);
+                wprintf(
+                    L"(in_type=%d, out_type=%d, flags=%x, offset=%lld, infosize=%d, infocount=%d, realsize=%d):%ls ",
+                    EventInfo->EventPropertyInfoArray[i].nonStructType.InType,
+                    EventInfo->EventPropertyInfoArray[i].nonStructType.OutType,
+                    EventInfo->EventPropertyInfoArray[i].Flags,
+                    UserData - (PBYTE)EventRecord->UserData,
+                    EventInfo->EventPropertyInfoArray[i].length, // may be lengthPropertyIndex because they are union
+                    EventInfo->EventPropertyInfoArray[i].count,  // may be countPropertyIndex  because they are union
+                    UserDataConsumed,
+                    FormattedData
+                );
                 UserData += UserDataConsumed;
             }
         }
